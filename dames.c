@@ -3,12 +3,15 @@
 
 struct game *new_game(int xsize, int ysize) {
     ///malloc create space for new game
-    game *Newgame = (game *) (malloc(sizeof(game)));
+    game *Newgame = (game *) (calloc(sizeof(game)));
     if (Newgame == NULL) {
         return NULL;
     }
     (*Newgame).xsize = xsize;
     (*Newgame).xsize = ysize;
+    (*Newgame).cur_player = PLAYER_WHITE;
+    //fill board
+    fill_board((*Newgame).board,xsize,ysize);
     return Newgame;
     //return pointer from malloc
 
@@ -23,8 +26,10 @@ struct game *load_game(int xsize, int ysize, const int **board, int cur_player) 
 }
 void free_game(struct game *game) {
     /// use free() to clear memory
-    // maybe also **board from game and move????
+    /// maybe also **board from game and move????
     free(game);
+    *game = NULL;
+
     return;
 }
 
@@ -59,3 +64,46 @@ int undo_moves(struct game *game, int n) {
 
 }
 
+void fill_board(int **board, int xsize, int ysize) {
+/// Minimal value for Xsize: 4
+/// Minimal value for Ysize: 4
+
+    int pion_noir = 00000001;
+    int pion_blanc = 00000101;
+    int empty = 00000000;
+    int lines_to_fill = 0;
+    if ((ysize % 2) == 0) {// Table size is even so Nomands land is 2
+        int lines_to_fill = (ysize-2)/2;
+    } else {
+        int lines_to_fill = (ysize-1)/2;
+    }
+    for (int i=0; i<ysize; i++)
+    {
+        for (int j=0; j<xsize; j++)
+        {
+            board[i][j] = (int *)(malloc(sizeof(int))); // malloc for
+            if (j >= lines_to_fill && j < (ysize-lines_to_fill))   // We are in No mans-land
+            {
+                *(board[i][j]) = empty;
+            }
+            if (i==0)   //first line Black
+            {
+                *(board[i][j]) = pion_noir;
+                j++;
+            }
+            else if (7 < *(board[i-1][j]) == 1 && j < lines_to_fill)
+            {
+                // pion is juste above, move to next to right
+                *(board[i][j]) = empty;
+                j++;
+            }
+            else
+            {
+                *(board[i][j]) = pion_noir;
+            }
+            //entière. Le bit C est le bit de couleur: 0 = noir, 1 = blanc.
+            //Le bit T est le bit de type de pièce: 0 = pion, 1 = dame.
+            //Le bit P est le bit de présence: 0 = case vide, 1 = case remplie.
+        }
+    }
+}
