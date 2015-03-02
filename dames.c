@@ -7,9 +7,9 @@ struct game *new_game(int xsize, int ysize) {
     if (Newgame == NULL) {
         return NULL;
     }
-    (*Newgame).xsize = xsize;
-    (*Newgame).xsize = ysize;
-    (*Newgame).cur_player = PLAYER_WHITE;
+    *Newgame->xsize = xsize;
+    *Newgame->xsize = ysize;
+    *Newgame->cur_player = PLAYER_WHITE;
     //fill board
     fill_board((*Newgame).board,xsize,ysize);
     return Newgame;
@@ -20,8 +20,8 @@ struct game *new_game(int xsize, int ysize) {
 struct game *load_game(int xsize, int ysize, const int **board, int cur_player) {
     ///Create New game and set position from board and current player
     game *f = new_game(xsize,ysize);
-    (*f).board = board;
-    (*f).cur_player = cur_player;
+    *f->board = board;
+    *f->cur_player = cur_player;
     return f;
 }
 void free_game(struct game *game) {
@@ -68,39 +68,52 @@ void fill_board(int **board, int xsize, int ysize) {
 /// Minimal value for Xsize: 4
 /// Minimal value for Ysize: 4
 
-    int pion_noir = 00000001;
-    int pion_blanc = 00000101;
-    int empty = 00000000;
+    int pion_noir = 0b00000001;
+    int pion_blanc = 0b00000101;
+    int empty = 0b00000000;
     int lines_to_fill = 0;
     if ((ysize % 2) == 0) {// Table size is even so Nomands land is 2
         int lines_to_fill = (ysize-2)/2;
     } else {
         int lines_to_fill = (ysize-1)/2;
     }
+    if(lines_to_fill > 4) { //pas plus de quatre lignes de jeu
+        lines_to_fill = 4;
+    }
     for (int i=0; i<ysize; i++)
     {
         for (int j=0; j<xsize; j++)
         {
-            board[i][j] = (int *)(malloc(sizeof(int))); // malloc for
-            if (j >= lines_to_fill && j < (ysize-lines_to_fill))   // We are in No mans-land
-            {
-                *(board[i][j]) = empty;
+            if(i+j % 2 == 0) { // si case à remplir et ...
+                if(j<lines_to_fill) { // ... que dans les 4 premières lignes ...
+                    board[i][j]=pion_noir; // ... c'est un pion noir
+                }
+                if(j>=xsize-lines_to_fill) { // ... que dans les 4dernières lignes ...
+                    board[i][j]=pion_blanc; // ... c'est un pion blanc
+                }
             }
-            if (i==0)   //first line Black
-            {
-                *(board[i][j]) = pion_noir;
-                j++;
+            else {
+                board[i][j]=empty; //sinon vide à coup sure
             }
-            else if (7 < *(board[i-1][j]) == 1 && j < lines_to_fill)
-            {
+            //if (j >= lines_to_fill && j < (ysize-lines_to_fill))   // We are in No mans-land
+            //{
+            //    board[i][j] = empty;
+            //}
+            //if (i==0)   //first line Black
+            //{
+            //    board[i][j] = pion_noir;
+            //    j++;
+            //}
+            //else if (7 < *(board[i-1][j]) == 1 && j < lines_to_fill)
+            //{
                 // pion is juste above, move to next to right
-                *(board[i][j]) = empty;
-                j++;
-            }
-            else
-            {
-                *(board[i][j]) = pion_noir;
-            }
+            //    *(board[i][j]) = empty;
+            //    j++;
+            //}
+            //else
+            //{
+            //    board[i][j] = pion_noir;
+            //}
             //entière. Le bit C est le bit de couleur: 0 = noir, 1 = blanc.
             //Le bit T est le bit de type de pièce: 0 = pion, 1 = dame.
             //Le bit P est le bit de présence: 0 = case vide, 1 = case remplie.
