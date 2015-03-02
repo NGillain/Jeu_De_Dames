@@ -7,9 +7,9 @@ struct game *new_game(int xsize, int ysize) {
     if (Newgame == NULL) {
         return NULL;
     }
-    *Newgame->xsize = xsize;
-    *Newgame->xsize = ysize;
-    *Newgame->cur_player = PLAYER_WHITE;
+    Newgame->xsize = xsize;
+    Newgame->xsize = ysize;
+    Newgame->cur_player = PLAYER_WHITE;
     //fill board
     fill_board((*Newgame).board,xsize,ysize);
     return Newgame;
@@ -20,8 +20,8 @@ struct game *new_game(int xsize, int ysize) {
 struct game *load_game(int xsize, int ysize, const int **board, int cur_player) {
     ///Create New game and set position from board and current player
     game *f = new_game(xsize,ysize);
-    *f->board = board;
-    *f->cur_player = cur_player;
+    f->board = board;
+    f->cur_player = cur_player;
     return f;
 }
 void free_game(struct game *game) {
@@ -61,12 +61,22 @@ int is_move_seq_valid(const struct game *game, const struct move_seq *seq, const
 }
 
 int undo_moves(struct game *game, int n) {
-
+    if(game->moves == NULL) {
+        return(EXIT_FAILURE); //si pas d'éléments, nous ne savons rien retirer
+    }
+    move *iter = (move *) malloc(sizeof(move));
+    iter = game->moves; //pas sur de la validité de cette ligne
+    int temp;
+    for(temp=0; (*iter.next).next != NULL, *iter=iter->next) {
+        temp
+    }
+    iter.next=NULL;
 }
 
 void fill_board(int **board, int xsize, int ysize) {
 /// Minimal value for Xsize: 4
 /// Minimal value for Ysize: 4
+/// Maximal number of non-empty lines : 4
 
     int pion_noir = 0b00000001;
     int pion_blanc = 0b00000101;
