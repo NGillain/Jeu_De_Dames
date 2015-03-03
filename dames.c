@@ -55,9 +55,60 @@ int apply_moves(struct game *game, const struct move *moves) {
     // when finished, set cur_player to next one
 }
 
-int is_move_seq_valid(const struct game *game, const struct move_seq *seq, const struct move_seq *prev, struct coord *taken) {
+int is_dame(const board **board,int x,int y)
+{
+    return (((board[x][y]) >> 1 ) << 7) == 0b1;
+}
 
+int is_blanc(const board **board,int x,int y)
+{
+    return ((board[x][y]) >> 2) == 0b1;
+}
 
+int is_move_seq_valid(const struct game *game, const struct move_seq *seq, const struct move_seq *prev, struct coord *taken)
+{
+    int xold = seq->c_old->x;
+    int yold = seq->c_old->y;
+    int xnew = seq->c_new->x;
+    int ynew = seq->c_new->y;
+    if (game->board[xnew][ynew] != EMPTY || abs(xold-xnew) != abs(xold-xnew))
+    {
+        return 0; // casse ou on veut aller non vide ou un mouvement de déplacement non valide
+    }
+    if (is_dame(game->board,xold,yold))   // on à une dame qui bouge
+    {
+        // dame qui bouge
+    }
+    else   // on a un pion qui bouge
+    {
+        if (abs(xold-xnew) > 2)
+        {
+            return 0;
+        }
+        if (is_blanc(game->board,xold,yold))
+        {
+            if (abs(xold-xnew) = 2 && is_blanc(game->board,xold+(xnew-xold)/2,yold+(ynew-yold)/2)))
+            {
+                return 0;
+            }
+            if ((xold-xnew) < 0)
+            {
+                return 0;
+            }
+        }
+        else
+        {
+            if (abs(xold-xnew) = 2 && !is_blanc(game->board,xold+(xnew-xold)/2,yold+(ynew-yold)/2))
+            {
+                return 0;
+            }
+            if ((xold-xnew) > 0)
+            {
+                return 0;
+            }
+        }
+    }
+    return 1; // OK
 }
 
 int undo_moves(struct game *game, int n) {
