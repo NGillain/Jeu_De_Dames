@@ -1,15 +1,22 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-struct game *new_game(int xsize, int ysize) {
+#define PION_NOIR = 0b00000001;
+#define PION_BLANC = 0b00000101;
+#define EMPTY = 0b00000000;
+
+struct game *new_game(int xsize, int ysize)
+{
     ///malloc create space for new game
-    game *Newgame = (game *) (calloc(sizeof(game)));
-    if (Newgame == NULL) {
+    game *Newgame = (game *) (malloc(sizeof(game)));
+    if (Newgame == NULL)
+    {
         return NULL;
     }
+    (*Newgame).xsize = xsize;
     Newgame->xsize = xsize;
-    Newgame->xsize = ysize;
-    Newgame->cur_player = PLAYER_WHITE;
+    (*Newgame).ysize = ysize;
+    (*Newgame).cur_player = PLAYER_WHITE;
     //fill board
     fill_board((*Newgame).board,xsize,ysize);
     return Newgame;
@@ -17,36 +24,42 @@ struct game *new_game(int xsize, int ysize) {
 
 }
 
-struct game *load_game(int xsize, int ysize, const int **board, int cur_player) {
+struct game *load_game(int xsize, int ysize, const int **board, int cur_player)
+{
     ///Create New game and set position from board and current player
     game *f = new_game(xsize,ysize);
-    f->board = board;
-    f->cur_player = cur_player;
+    (*f).board = board;
+    (*f).cur_player = cur_player;
     return f;
 }
-void free_game(struct game *game) {
-    /// use free() to clear memory
-    /// maybe also **board from game and move????
+void free_game(struct game *game)
+{
     free(game);
     *game = NULL;
 
     return;
 }
 
-int apply_moves(struct game *game, const struct move *moves) {
+int apply_moves(struct game *game, const struct move *moves)
+{
     //
     struct move_seq mvseq = (*moves).seq;
     // check if movement is permitted
-    while (*mvseq).next != NULL) {
-    int ans = is_move_seq_valid(game, mvseq, prev, taken coordinates);
-        if (ans == 0) {
+    while (mvseq->next != NULL)
+    {
+        int ans = is_move_seq_valid(game, mvseq, prev, taken coordinates);
+        if (ans == 0)
+        {
             return -1; // error, movement not permitted
 
         }
-        if (ans == 1) {
+        if (ans == 1)
+        {
             // movement permit
             // Set value board[c_old] to board[c_new]
-        } else {
+        }
+        else
+        {
             // movement permit et capture
             // Set value board[c_old+1] to board[c_new+1]
         }
@@ -67,97 +80,136 @@ int is_blanc(const board **board,int x,int y)
 
 int is_move_seq_valid(const struct game *game, const struct move_seq *seq, const struct move_seq *prev, struct coord *taken)
 {
-    int xold = seq->c_old->x;
-    int yold = seq->c_old->y;
-    int xnew = seq->c_new->x;
-    int ynew = seq->c_new->y;
-    if (game->board[xnew][ynew] != EMPTY || abs(xold-xnew) != abs(xold-xnew))
+    while (tmp>next != NULL) //?????????????????????????,,,
     {
-        return 0; // casse ou on veut aller non vide ou un mouvement de déplacement non valide
-    }
-    if (is_dame(game->board,xold,yold))   // on à une dame qui bouge
-    {
-        // dame qui bouge
-    }
-    else   // on a un pion qui bouge
-    {
-        if (abs(xold-xnew) > 2)
+        int xold = seq->c_old->x;
+        int yold = seq->c_old->y;
+        int xnew = seq->c_new->x;
+        int ynew = seq->c_new->y;
+        if (game->board[xnew][ynew] != EMPTY || abs(xold-xnew) != abs(xold-xnew))
         {
-            return 0;
+            return 0; // casse ou on veut aller non vide ou un mouvement de déplacement non valide
         }
-        if (is_blanc(game->board,xold,yold))
+        if (is_dame(game->board,xold,yold))   // on à une dame qui bouge
         {
-            if (abs(xold-xnew) = 2 && is_blanc(game->board,xold+(xnew-xold)/2,yold+(ynew-yold)/2)))
+            if (seq->next == NULL && game->board[xnew+(xold-xnew)/(abs(xold-xnew))][ynew+(yold-ynew)/(abs(yold-ynew))] == EMPTY)
             {
                 return 0;
             }
-            if ((xold-xnew) < 0)
+            else
             {
-                return 0;
+                return 2; // capture du dernier pion par la dame
             }
         }
-        else
+        else   // on a un pion qui bouge
         {
-            if (abs(xold-xnew) = 2 && !is_blanc(game->board,xold+(xnew-xold)/2,yold+(ynew-yold)/2))
+            if (abs(xold-xnew) > 2)
             {
                 return 0;
             }
-            if ((xold-xnew) > 0)
+            if (is_blanc(game->board,xold,yold))
             {
-                return 0;
+                if (abs(xold-xnew) = 2 && is_blanc(game->board,xold+(xnew-xold)/2,yold+(ynew-yold)/2)))
+                {
+                    return 0;
+                }
+                else
+                {
+                    return 2; // capture d'un noir par les blanc
+                }
+                if ((xold-xnew) < 0)
+                {
+                    return 0;
+                }
+            }
+            else
+            {
+                if (abs(xold-xnew) = 2 && !is_blanc(game->board,xold+(xnew-xold)/2,yold+(ynew-yold)/2))
+                {
+                    return 0;
+                }
+                else
+                {
+                    return 2; // capture d'un blanc par les noir
+                }
+                if ((xold-xnew) > 0)
+                {
+                    return 0;
+                }
             }
         }
+
     }
-    return 1; // OK
+
+    return 1; // OK, deplacement
 }
 
-int undo_moves(struct game *game, int n) {
-    if(game->moves == NULL) {
+int undo_moves(struct game *game, int n)
+{
+    if(game->moves == NULL)
+    {
         return(EXIT_FAILURE); //si pas d'éléments, nous ne savons rien retirer
     }
     move *iter = (move *) malloc(sizeof(move));
-    if(iter == NULL) {
-        error("memory is full");
-    }
     iter = game->moves; //pas sur de la validité de cette ligne
-    while(iter.next->next != NULL) {
-        *iter=iter->next;
+    int temp;
+    for(temp=0; (*iter.next).next != NULL; *iter=iter->next)
+    {
+        temp
     }
     iter.next=NULL;
 }
 
-void fill_board(int **board, int xsize, int ysize) {
-/// Minimal value for Xsize: 4
-/// Minimal value for Ysize: 4
-/// Maximal number of non-empty lines : 4
 
-    int pion_noir = 0b00000001;
-    int pion_blanc = 0b00000101;
-    int empty = 0b00000000;
+void fill_board(int **board, int xsize, int ysize)
+{
+/// Minimal value for Xsize: 5
+/// Minimal value for Ysize: 5
+
     int lines_to_fill = 0;
-    if ((ysize % 2) == 0) {// Table size is even so Nomands land is 2
+    if ((ysize % 2) == 0)
+    {
         int lines_to_fill = (ysize-2)/2;
-    } else {
+    }
+    else
+    {
         int lines_to_fill = (ysize-1)/2;
     }
-    if(lines_to_fill > 4) { //pas plus de quatre lignes de jeu
+    if(lines_to_fill>4)
+    {
         lines_to_fill = 4;
     }
     for (int i=0; i<ysize; i++)
     {
         for (int j=0; j<xsize; j++)
         {
-            if(i+j % 2 == 0) { // si case à remplir et ...
-                if(j<lines_to_fill) { // ... que dans les 4 premières lignes ...
-                    board[i][j]=pion_noir; // ... c'est un pion noir
+            //board[i][j] = (int *)(malloc(sizeof(int))); // malloc for
+            /// i+j % 2 == 0 => pion to place
+
+            if(i+j % 2 == 0)   // si case à remplir et ...
+            {
+                if(j<lines_to_fill)   // ... que dans les 4 premières lignes ...
+                {
+                    board[i][j]=PION_NOIR; // ... c'est un pion noir
                 }
-                if(j>=xsize-lines_to_fill) { // ... que dans les 4dernières lignes ...
-                    board[i][j]=pion_blanc; // ... c'est un pion blanc
+                else if (j>=xsize-lines_to_fill)     // ... que dans les 4dernières lignes ...
+                {
+                    board[i][j]=PION_BLANC; // ... c'est un pion blanc
+                }
+                else
+                {
+                    board[i][j]=EMPTY;
                 }
             }
-            else {
-                board[i][j]=empty; //sinon vide à coup sure
+            else
+            {
+                board[i][j]=EMPTY; //sinon vide à coup sure
             }
         }
     }
+}
+
+void print_board(const struct game *game)
+{
+    // print line by line
 }
