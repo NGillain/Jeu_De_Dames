@@ -116,10 +116,12 @@ int undo_moves(struct game *game, int n) {
         return(EXIT_FAILURE); //si pas d'éléments, nous ne savons rien retirer
     }
     move *iter = (move *) malloc(sizeof(move));
+    if(iter == NULL) {
+        error("memory is full");
+    }
     iter = game->moves; //pas sur de la validité de cette ligne
-    int temp;
-    for(temp=0; (*iter.next).next != NULL, *iter=iter->next) {
-        temp
+    while(iter.next->next != NULL) {
+        *iter=iter->next;
     }
     iter.next=NULL;
 }
@@ -156,28 +158,6 @@ void fill_board(int **board, int xsize, int ysize) {
             else {
                 board[i][j]=empty; //sinon vide à coup sure
             }
-            //if (j >= lines_to_fill && j < (ysize-lines_to_fill))   // We are in No mans-land
-            //{
-            //    board[i][j] = empty;
-            //}
-            //if (i==0)   //first line Black
-            //{
-            //    board[i][j] = pion_noir;
-            //    j++;
-            //}
-            //else if (7 < *(board[i-1][j]) == 1 && j < lines_to_fill)
-            //{
-                // pion is juste above, move to next to right
-            //    *(board[i][j]) = empty;
-            //    j++;
-            //}
-            //else
-            //{
-            //    board[i][j] = pion_noir;
-            //}
-            //entière. Le bit C est le bit de couleur: 0 = noir, 1 = blanc.
-            //Le bit T est le bit de type de pièce: 0 = pion, 1 = dame.
-            //Le bit P est le bit de présence: 0 = case vide, 1 = case remplie.
         }
     }
 }
