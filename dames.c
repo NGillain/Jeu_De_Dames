@@ -1,32 +1,37 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include "dames.h"
 
-#define PION_NOIR = 0b00000001;
-#define PION_BLANC = 0b00000101;
-#define EMPTY = 0b00000000;
+#define PION_NOIR   0b00000001
+#define PION_BLANC  0b00000101
+#define EMPTY       0b00000000
+
+int main(int argc,char *argv[])
+{
+    return 1;
+}
 
 struct game *new_game(int xsize, int ysize)
 {
-    ///malloc create space for new game
-    game *Newgame = (game *) (malloc(sizeof(game)));
+    struct game *Newgame;
+    Newgame = (struct game *) (malloc(sizeof(struct game)));
     if (Newgame == NULL)
     {
         return NULL;
     }
     Newgame->xsize = xsize;
     Newgame->ysize = ysize;
-    Newgame->cur_player = PLAYER_WHITE;
+    Newgame->cur_player = PLAYER_WHITE; // jouer blanc commance toujours
+    Newgame->moves = NULL; // Null car pas de move au debut
+    int **board = (int **) malloc(ysize*sizeof(int*));
     //fill board
-    fill_board(Newgame->board,xsize,ysize);
+    create_board(Newgame->board,xsize,ysize);
     return Newgame;
-    //return pointer from malloc
-
 }
 
 struct game *load_game(int xsize, int ysize, const int **board, int cur_player)
 {
-    ///Create New game and set position from board and current player
-    game *f = new_game(xsize,ysize);
+    struct game *f = new_game(xsize,ysize);
     f->board = board;
     f->cur_player = cur_player;
     return f;
@@ -34,19 +39,19 @@ struct game *load_game(int xsize, int ysize, const int **board, int cur_player)
 void free_game(struct game *game)
 {
     free(game);
-    *game = NULL;
-
+    game = NULL;
     return;
 }
 
 int apply_moves(struct game *game, const struct move *moves)
 {
     //
-    struct move_seq mvseq = (*moves).seq;
+    struct move_seq *mvseq = moves->seq;
     // check if movement is permitted
     while (mvseq->next != NULL)
     {
-        int ans = is_move_seq_valid(game, mvseq, prev, taken coordinates);
+        //int ans = is_move_seq_valid(game, mvseq, prev, taken coordinates);
+        int ans =0;
         if (ans == 0)
         {
             return -1; // error, movement not permitted
@@ -67,29 +72,36 @@ int apply_moves(struct game *game, const struct move *moves)
     // when finished, set cur_player to next one
 }
 
-int is_dame(const board **board,int x,int y)
+int is_dame(const int **board,int x,int y)
 {
     return (((board[x][y]) >> 1 ) << 7) == 0b1;
 }
 
-int is_blanc(const board **board,int x,int y)
+int is_blanc(const int **board,int x,int y)
 {
     return ((board[x][y]) >> 2) == 0b1;
 }
 
 int is_move_seq_valid(const struct game *game, const struct move_seq *seq, const struct move_seq *prev, struct coord *taken)
 {
+    if (prev != NULL)   //si prev != NULL check prev->c_
+    {
+        if ((prev->c_new) != (seq->c_old))
+        {
+            return 0;
+        }
+    }
     int xold = seq->c_old->x;
     int yold = seq->c_old->y;
     int xnew = seq->c_new->x;
     int ynew = seq->c_new->y;
-    if (game->board[xnew][ynew] != EMPTY || abs(xold-xnew) != abs(xold-xnew))
+    if (game->board[xnew][ynew] != EMPTY || abs(xold-xnew) != abs(yold-ynew))
     {
         return 0; // casse ou on veut aller non vide ou un mouvement de déplacement non valide
     }
     if (is_dame(game->board,xold,yold))   // on à une dame qui bouge
     {
-        if (seq->next == NULL && game->board[xnew+(xold-xnew)/(abs(xold-xnew))][ynew+(yold-ynew)/(abs(yold-ynew))] == EMPTY)
+        if (seq->next == NULL && game->board[xnew+(xold-xnew)/(abs(xold-xnew))][ynew+(yold-ynew)/(abs(yold-ynew))] == EMPTY)//
         {
             return 0;
         }
@@ -106,7 +118,7 @@ int is_move_seq_valid(const struct game *game, const struct move_seq *seq, const
         }
         if (is_blanc(game->board,xold,yold))
         {
-            if (abs(xold-xnew) = 2 && is_blanc(game->board,xold+(xnew-xold)/2,yold+(ynew-yold)/2))) // check si il y a un pion sur la casse ou le pion est passé au dessus
+            if (abs(xold-xnew) = 2 && is_blanc(game->board,xold+(xnew-xold)/2,yold+(ynew-yold)/2)) // check si il y a un pion sur la casse ou le pion est passé au dessus
             {
                 return 0;
             }
@@ -129,7 +141,7 @@ int is_move_seq_valid(const struct game *game, const struct move_seq *seq, const
             {
                 return 2; // capture d'un blanc par les noir
             }
-            if ((yold-ynew) > 0) // les noir bouge vers le bas, vers y=ysize
+            if ((yold-ynew) > 0) // les noirs bouge vers le bas, vers y=ysize
             {
                 return 0;
             }
@@ -138,14 +150,13 @@ int is_move_seq_valid(const struct game *game, const struct move_seq *seq, const
 
     return 1; // OK, deplacement possible
 }
-
 int undo_moves(struct game *game, int n)
 {
     if(game->moves == NULL)
     {
         return(EXIT_FAILURE); //si pas d'éléments, nous ne savons rien retirer
     }
-    move *iter = (move *) malloc(sizeof(move));
+    struct move *iter = (struct move *) (malloc(sizeof(struct move)));
     iter = game->moves; //pas sur de la validité de cette ligne
     while(*(iter->next).next != NULL)
     {
@@ -156,7 +167,7 @@ int undo_moves(struct game *game, int n)
 }
 
 
-void fill_board(int **board, int xsize, int ysize)
+void create_board(int **board, int xsize, int ysize)
 {
 /// Minimal value for Xsize: 5
 /// Minimal value for Ysize: 5
@@ -178,8 +189,7 @@ void fill_board(int **board, int xsize, int ysize)
     {
         for (int j=0; j<xsize; j++)
         {
-            //board[i][j] = (int *)(malloc(sizeof(int))); // malloc for
-            /// i+j % 2 == 0 => pion to place
+            board[i][j] = (int *) malloc(xsize*sizeof(int));
 
             if(i+j % 2 == 0)   // si case à remplir et ...
             {
@@ -206,27 +216,39 @@ void fill_board(int **board, int xsize, int ysize)
 
 void print_board(const struct game *game)
 {
-    for (int j=0;j<ysize;j++) {
-        for (int i=0;i<xsize;i++){
+
+    for (int j=0; j<game->ysize; j++)
+    {
+        for (int i=0; i<game->xsize; i++)
+        {
             int current_piece = game->board[i][j];
-            if (current_piece==EMPTY) {
+            if (current_piece==EMPTY)
+            {
                 printf("|   ");
-            } else if (is_blanc(current_piece)) {
-                if (is_dame(current_piece)) {
+            }
+            else if (is_blanc(current_piece,i,j))
+            {
+                if (is_dame(current_piece,i,j))
+                {
                     printf("| W ");
-                } else {
+                }
+                else
+                {
                     printf("| w ");
                 }
-            } else {
-                if (is_dame(current_piece)) {
+            }
+            else
+            {
+                if (is_dame(current_piece,i,j))
+                {
                     printf("| B ");
-                } else {
+                }
+                else
+                {
                     printf("| b ");
                 }
             }
         }
         printf("|\n");
     }
-}
-    // print line by line
 }
