@@ -13,12 +13,11 @@ struct game *new_game(int xsize, int ysize)
     {
         return NULL;
     }
-    (*Newgame).xsize = xsize;
     Newgame->xsize = xsize;
-    (*Newgame).ysize = ysize;
-    (*Newgame).cur_player = PLAYER_WHITE;
+    Newgame->ysize = ysize;
+    Newgame->cur_player = PLAYER_WHITE;
     //fill board
-    fill_board((*Newgame).board,xsize,ysize);
+    fill_board(Newgame->board,xsize,ysize);
     return Newgame;
     //return pointer from malloc
 
@@ -28,8 +27,8 @@ struct game *load_game(int xsize, int ysize, const int **board, int cur_player)
 {
     ///Create New game and set position from board and current player
     game *f = new_game(xsize,ysize);
-    (*f).board = board;
-    (*f).cur_player = cur_player;
+    f->board = board;
+    f->cur_player = cur_player;
     return f;
 }
 void free_game(struct game *game)
@@ -80,68 +79,64 @@ int is_blanc(const board **board,int x,int y)
 
 int is_move_seq_valid(const struct game *game, const struct move_seq *seq, const struct move_seq *prev, struct coord *taken)
 {
-    while (tmp>next != NULL) //?????????????????????????,,,
+    int xold = seq->c_old->x;
+    int yold = seq->c_old->y;
+    int xnew = seq->c_new->x;
+    int ynew = seq->c_new->y;
+    if (game->board[xnew][ynew] != EMPTY || abs(xold-xnew) != abs(xold-xnew))
     {
-        int xold = seq->c_old->x;
-        int yold = seq->c_old->y;
-        int xnew = seq->c_new->x;
-        int ynew = seq->c_new->y;
-        if (game->board[xnew][ynew] != EMPTY || abs(xold-xnew) != abs(xold-xnew))
+        return 0; // casse ou on veut aller non vide ou un mouvement de déplacement non valide
+    }
+    if (is_dame(game->board,xold,yold))   // on à une dame qui bouge
+    {
+        if (seq->next == NULL && game->board[xnew+(xold-xnew)/(abs(xold-xnew))][ynew+(yold-ynew)/(abs(yold-ynew))] == EMPTY)
         {
-            return 0; // casse ou on veut aller non vide ou un mouvement de déplacement non valide
+            return 0;
         }
-        if (is_dame(game->board,xold,yold))   // on à une dame qui bouge
+        else
         {
-            if (seq->next == NULL && game->board[xnew+(xold-xnew)/(abs(xold-xnew))][ynew+(yold-ynew)/(abs(yold-ynew))] == EMPTY)
+            return 2; // capture du dernier pion par la dame
+        }
+    }
+    else   // on a un pion qui bouge
+    {
+        if (abs(xold-xnew) > 2) // pion ne bouge pas de plus de 2 casses
+        {
+            return 0;
+        }
+        if (is_blanc(game->board,xold,yold))
+        {
+            if (abs(xold-xnew) = 2 && is_blanc(game->board,xold+(xnew-xold)/2,yold+(ynew-yold)/2))) // check si il y a un pion sur la casse ou le pion est passé au dessus
             {
                 return 0;
             }
             else
             {
-                return 2; // capture du dernier pion par la dame
+                return 2; // capture d'un noir par les blanc
             }
-        }
-        else   // on a un pion qui bouge
-        {
-            if (abs(xold-xnew) > 2)
+            if ((yold-ynew) < 0) // les blanc bouge vers le haut, vers y=0
             {
                 return 0;
             }
-            if (is_blanc(game->board,xold,yold))
+        }
+        else
+        {
+            if (abs(xold-xnew) = 2 && !is_blanc(game->board,xold+(xnew-xold)/2,yold+(ynew-yold)/2))
             {
-                if (abs(xold-xnew) = 2 && is_blanc(game->board,xold+(xnew-xold)/2,yold+(ynew-yold)/2)))
-                {
-                    return 0;
-                }
-                else
-                {
-                    return 2; // capture d'un noir par les blanc
-                }
-                if ((xold-xnew) < 0)
-                {
-                    return 0;
-                }
+                return 0;
             }
             else
             {
-                if (abs(xold-xnew) = 2 && !is_blanc(game->board,xold+(xnew-xold)/2,yold+(ynew-yold)/2))
-                {
-                    return 0;
-                }
-                else
-                {
-                    return 2; // capture d'un blanc par les noir
-                }
-                if ((xold-xnew) > 0)
-                {
-                    return 0;
-                }
+                return 2; // capture d'un blanc par les noir
+            }
+            if ((yold-ynew) > 0) // les noir bouge vers le bas, vers y=ysize
+            {
+                return 0;
             }
         }
-
     }
 
-    return 1; // OK, deplacement
+    return 1; // OK, deplacement possible
 }
 
 int undo_moves(struct game *game, int n)
@@ -211,5 +206,27 @@ void fill_board(int **board, int xsize, int ysize)
 
 void print_board(const struct game *game)
 {
+    for (int j=0;j<ysize;j++) {
+        for (int i=0;i<xsize;i++){
+            int current_piece = game->board[i][j];
+            if (current_piece==EMPTY) {
+                printf("|   ");
+            } else if (is_blanc(current_piece)) {
+                if (is_dame(current_piece)) {
+                    printf("| W ");
+                } else {
+                    printf("| w ");
+                }
+            } else {
+                if (is_dame(current_piece)) {
+                    printf("| B ");
+                } else {
+                    printf("| b ");
+                }
+            }
+        }
+        printf("|\n");
+    }
+}
     // print line by line
 }
