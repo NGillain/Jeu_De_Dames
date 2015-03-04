@@ -152,12 +152,12 @@ int undo_moves(struct game *game, int n)
     }
     move *iter = (move *) malloc(sizeof(move));
     iter = game->moves; //pas sur de la validité de cette ligne
-    int temp;
-    for(temp=0; (*iter.next).next != NULL; *iter=iter->next)
+    while(*(iter->next).next != NULL)
     {
-        temp
+        iter=iter->next;
     }
     iter.next=NULL;
+    free(iter);
 }
 
 
