@@ -1,0 +1,59 @@
+ALGORITHME POUR LA VERIFICATION DE LA VALIDITE D'UNE SEQUENCE
+-------------------------------------------------------------
+
+Voici la liste des mouvements autorisés por le jeu de dame (règles internationales)
+
+POINTS COMMUNS
+--------------
+
+- seul déplacement en diagonal autorisé ==> abs(X_new-X_old)==abs(Y_new-Y_old)
+- interdit de se placer sur une case déjà occupée ==> game->board[X_new][Y_new] == EMPTY
+
+Ensuite, viennent les spécificités de chaque pièces :
+
+DAME SANS PRISE
+---------------
+
+seuls les conditions communes doivent être respectées.
+
+DAME AVEC PRISE
+---------------
+
+En plus des conditions communes
+
+- il doit y avoir un pion/une dame sur la case juste avant la nouvelle position
+==> Abs(taken.X-X_new)==1 && Abs(taken.Y-Y_new)==1
+
+PION NOIR SANS PRISE
+--------------------
+
+Communs +
+
+- déplacement d'une seule case ==> Abs(X_new-X_old)==1 //conditions d'égalité entre dX et dY supposé vraie
+- déplacement vers l'arrière intredit si pas de prise ==> Y_new-Y_old>0
+
+PION NOIR AVEC PRISE
+--------------------
+
+Communs +
+
+- déplacement de deux cases ==> Abs(X_new-X_old)==2 //conditions d'égalité entre dX et dY supposé vraie
+- il doit y avoir une pièce blanche entre la case de départ et la case d'arrivée
+==> is_blanc(game->board, (X_new+X_old)/2, (Y_new+Y_old)/2)
+
+PION BLANC SANS PRISE
+---------------------
+
+Communs +
+
+- déplacement d'une seule case ==> Abs(X_new-X_old)==1 //conditions d'égalité entre dX et dY supposé vraie
+- déplacement vers l'arrière intredit si pas de prise ==> Y_new-Y_old<0
+
+PION BLANC AVEC PRISE
+---------------------
+
+Communs +
+
+- déplacement de deux cases ==> Abs(X_new-X_old)==2 //conditions d'égalité entre dX et dY supposé vraie
+- il doit y avoir une pièce noire entre la case de départ et la case d'arrivée
+==> !is_blanc(game->board, (X_new+X_old)/2, (Y_new+Y_old)/2)
