@@ -14,7 +14,25 @@ Ensuite, viennent les spécificités de chaque pièces :
 DAME SANS PRISE
 ---------------
 
-seuls les conditions communes doivent être respectées.
+Communes +
+
+- il ne faut pas de pion de la même couleur sur le chemin ==>
+for(int a=1; ;a++){
+  if(is_blanc(dame) == is_blanc(curr_position)){
+    return 0;
+  }
+}
+//if(game->board[x_old+a*(xold-xnew)/(abs(xold-xnew)][y_old+a*(yold-ynew)/(abs(yold-ynew)])
+- il ne faut pas plus d'un pion de la couleur opposée sur le chemin ==>
+int temp=0;
+for(int a=1; ;a++){
+  if(is_blanc(dame) != is_blanc(curr_position)){
+    temp++;
+    if(temp>1){
+      return 0;
+    }
+  }
+}
 
 DAME AVEC PRISE
 ---------------
