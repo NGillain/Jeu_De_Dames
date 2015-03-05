@@ -76,16 +76,16 @@ int apply_moves(struct game *game, const struct move *moves)
     // when finished, set cur_player to next one
 }
 
-int is_dame(const int **board,int x,int y)
+int is_dame(int x,int y) // pas sure que cela fonctionne
 {
     //spec : 0 si pion et 1 si dame
-    return (((board[x][y]) >> 1 ) << 7) == 0b1;
+    return ((((board[x][y]) >> 1 ) << 7) == 0b1);
 }
 
-int is_blanc(const int **board,int x,int y)
+int is_blanc(int x,int y) // idem
 {
     //spec : 0 si noir et 1 si blanc
-    return ((board[x][y]) >> 2) == 0b1;
+    return (((board[x][y]) >> 2) == 0b1);
 }
 
 int is_move_seq_valid(const struct game *game, const struct move_seq *seq, const struct move_seq *prev, struct coord *taken)
@@ -106,26 +106,50 @@ int is_move_seq_valid(const struct game *game, const struct move_seq *seq, const
     {
         return 0; // case ou on veut aller non vide ou un mouvement de déplacement non valide
     }
-    if (is_dame(game->board,xold,yold))   // on à une dame qui bouge
+    if (0>xnew || xnew>game->xsize || 0>ynew || ynew>game->ysize)
     {
-        if (seq->next == NULL && game->board[xnew+(xold-xnew)/(abs(xold-xnew))][ynew+(yold-ynew)/(abs(yold-ynew))] == EMPTY)//
+        return 0; // illegal move : OutOfBound
+    }
+    if (is_dame(game->board[xold][yold]))   // on à une dame qui bouge
+    {
+        int vec_X = (xnew-xold)/abs(xnew-xold);
+        int vec_Y = (ynew-yold)/abs(ynew-yold);
+        for(int a=1; a=<(xnew-xold); a++)
         {
-            return 0;
+            if(is_blanc(xold, yold) == is_blanc(xold+a*vec_X, yold+a*vec_Y)) //Des qu'il y a un pion de la même couleur
+            {
+                return 0;
+            }
         }
-        else
+        int temp=0;
+        for(int b=1; b=<(xnew-xold); b++)
         {
-            return 2; // capture du dernier pion par la dame
+            if(is_blanc(xold,yold) != is_blanc(xold+a*vec_X, yold+a*vec_Y))
+            {
+                temp++;
+            }
+            if(temp>1){
+                return 0;
+            }
         }
     }
+    //    if (seq->next == NULL && game->board[xnew+(xold-xnew)/(abs(xold-xnew))][ynew+(yold-ynew)/(abs(yold-ynew))] == EMPTY)//
+    //    {
+    //        return 0; //faux que se passe-t-il si la dame souhaite aller quelque part sans prise de pion pour son dernier déplacement? ==> return 0
+    //    }
+    //    else
+    //    {
+    //        return 2; // capture du dernier pion par la dame
+    //    }
     else   // on a un pion qui bouge
     {
         if (abs(xold-xnew) > 2) // pion ne bouge pas de plus de 2 casses
         {
             return 0;
         }
-        if (is_blanc(game->board,xold,yold))
+        if (is_blanc(game->board[xold][yold]))
         {
-            if (abs(xold-xnew) = 2 && is_blanc(game->board,xold+(xnew-xold)/2,yold+(ynew-yold)/2)) // check si il y a un pion sur la casse ou le pion est passé au dessus
+            if (abs(xold-xnew) = 2 && is_blanc(game->board[xold+(xnew-xold)/2][yold+(ynew-yold)/2])) // check si il y a un pion sur la casse ou le pion est passé au dessus
             {
                 return 0;
             }
@@ -140,7 +164,7 @@ int is_move_seq_valid(const struct game *game, const struct move_seq *seq, const
         }
         else
         {
-            if (abs(xold-xnew) = 2 && !is_blanc(game->board,xold+(xnew-xold)/2,yold+(ynew-yold)/2))
+            if (abs(xold-xnew) = 2 && !is_blanc(game->board[xold+(xnew-xold)/2][yold+(ynew-yold)/2]))
             {
                 return 0;
             }
@@ -188,11 +212,11 @@ void create_board(int **board, int xsize, int ysize)
     }
     else
     {
-        int lines_to_fill = (ysize-1)/2;
+        int lines_to_fill = (ysize-1)/2; // let at least an empty line to play
     }
     if(lines_to_fill>4)
     {
-        lines_to_fill = 4;
+        lines_to_fill = 4; // max 4 lines with pions
     }
     for (int i=0; i<ysize; i++)
     {
@@ -206,13 +230,13 @@ void create_board(int **board, int xsize, int ysize)
                 {
                     board[i][j]=PION_NOIR; // ... c'est un pion noir
                 }
-                else if (j>=xsize-lines_to_fill)     // ... que dans les 4dernières lignes ...
+                else if (j>=xsize-lines_to_fill)     // ... que dans les 4 dernières lignes ...
                 {
                     board[i][j]=PION_BLANC; // ... c'est un pion blanc
                 }
                 else
                 {
-                    board[i][j]=EMPTY;
+                    board[i][j]=EMPTY; //sinon c'est vide (?)
                 }
             }
             else
