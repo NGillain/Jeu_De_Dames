@@ -147,9 +147,13 @@ int is_move_seq_valid(const struct game *game, const struct move_seq *seq, const
         {
             return 0;
         }
-        if (is_blanc(game->board[xold][yold]))
+        if (is_blanc(xold,yold))
         {
-            if (abs(xold-xnew) = 2 && is_blanc(game->board[xold+(xnew-xold)/2][yold+(ynew-yold)/2])) // check si il y a un pion sur la casse ou le pion est passé au dessus
+            if ((yold-ynew) < 0) // les blanc bouge vers le haut, vers y=0
+            {
+                return 0;
+            }
+            else if (abs(xold-xnew) = 2 && is_blanc(xold+(xnew-xold)/2, yold+(ynew-yold)/2)) // check si il y a un pion sur la casse ou le pion est passé au dessus
             {
                 return 0;
             }
@@ -157,13 +161,13 @@ int is_move_seq_valid(const struct game *game, const struct move_seq *seq, const
             {
                 return 2; // capture d'un noir par les blanc
             }
-            if ((yold-ynew) < 0) // les blanc bouge vers le haut, vers y=0
-            {
-                return 0;
-            }
         }
         else
         {
+            if ((yold-ynew) > 0) // les noirs bouge vers le bas, vers y=ysize
+            {
+                return 0;
+            }
             if (abs(xold-xnew) = 2 && !is_blanc(game->board[xold+(xnew-xold)/2][yold+(ynew-yold)/2]))
             {
                 return 0;
@@ -171,10 +175,6 @@ int is_move_seq_valid(const struct game *game, const struct move_seq *seq, const
             else
             {
                 return 2; // capture d'un blanc par les noir
-            }
-            if ((yold-ynew) > 0) // les noirs bouge vers le bas, vers y=ysize
-            {
-                return 0;
             }
         }
     }
