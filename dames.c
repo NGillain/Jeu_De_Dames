@@ -76,16 +76,16 @@ int apply_moves(struct game *game, const struct move *moves)
     // when finished, set cur_player to next one
 }
 
-int is_dame(int x,int y) // pas sure que cela fonctionne
+int is_dame(int value) // pas sure que cela fonctionne
 {
     //spec : 0 si pion et 1 si dame
-    return ((((board[x][y]) >> 1 ) << 7) == 0b1);
+    return ((value >> 1 ) << 7) == 0b1);
 }
 
-int is_blanc(int x,int y) // idem
+int is_blanc(int value) // idem
 {
     //spec : 0 si noir et 1 si blanc
-    return (((board[x][y]) >> 2) == 0b1);
+    return ((value >> 2) == 0b1);
 }
 
 int is_move_seq_valid(const struct game *game, const struct move_seq *seq, const struct move_seq *prev, struct coord *taken)
@@ -116,7 +116,7 @@ int is_move_seq_valid(const struct game *game, const struct move_seq *seq, const
         int vec_Y = (ynew-yold)/abs(ynew-yold);
         for(int a=1; a=<(xnew-xold); a++)
         {
-            if(is_blanc(xold, yold) == is_blanc(xold+a*vec_X, yold+a*vec_Y)) //Des qu'il y a un pion de la même couleur
+            if(is_blanc(game->board[xold][yold]) == is_blanc(game->board[xold+a*vec_X][yold+a*vec_Y])) //Des qu'il y a un pion de la même couleur
             {
                 return 0;
             }
@@ -124,7 +124,7 @@ int is_move_seq_valid(const struct game *game, const struct move_seq *seq, const
         int temp=0;
         for(int b=1; b=<(xnew-xold); b++)
         {
-            if(is_blanc(xold,yold) != is_blanc(xold+a*vec_X, yold+a*vec_Y))
+            if(is_blanc(game->board[xold][yold]) != is_blanc(game->board[xold+a*vec_X][yold+a*vec_Y]))
             {
                 temp++;
             }
@@ -147,13 +147,13 @@ int is_move_seq_valid(const struct game *game, const struct move_seq *seq, const
         {
             return 0;
         }
-        if (is_blanc(xold,yold))
+        if (is_blanc(game->board[xold][yold]))
         {
             if ((yold-ynew) < 0) // les blanc bouge vers le haut, vers y=0
             {
                 return 0;
             }
-            else if (abs(xold-xnew) = 2 && is_blanc(xold+(xnew-xold)/2, yold+(ynew-yold)/2)) // check si il y a un pion sur la casse ou le pion est passé au dessus
+            else if (abs(xold-xnew) = 2 && is_blanc(game->board[xold+(xnew-xold)/2][yold+(ynew-yold)/2])) // check si il y a un pion sur la casse ou le pion est passé au dessus
             {
                 return 0;
             }
@@ -260,9 +260,9 @@ void print_board(const struct game *game)
             {
                 printf("|   ");
             }
-            else if (is_blanc(current_piece,i,j))
+            else if (is_blanc(current_piece))
             {
-                if (is_dame(current_piece,i,j))
+                if (is_dame(current_piece))
                 {
                     printf("| W ");
                 }
@@ -273,7 +273,7 @@ void print_board(const struct game *game)
             }
             else
             {
-                if (is_dame(current_piece,i,j))
+                if (is_dame(current_piece))
                 {
                     printf("| B ");
                 }
