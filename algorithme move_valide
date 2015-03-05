@@ -51,6 +51,14 @@ for(int a=1; ;a++){
   }
 }
 
+PIONS GENERALITES
+-----------------
+
+Conditions pour les moves de pions
+
+- Un pion ne peut pas se déplacer plus de trois cases en diagonale
+==> Abs(X_new-X_old)<3 //conditions sur X et Y grace a la condition plus haut
+
 PION NOIR SANS PRISE
 --------------------
 
@@ -66,7 +74,8 @@ Communs +
 
 - déplacement de deux cases ==> Abs(X_new-X_old)==2 //conditions d'égalité entre dX et dY supposé vraie
 - il doit y avoir une pièce blanche entre la case de départ et la case d'arrivée
-==> is_blanc(game->board, (X_new+X_old)/2, (Y_new+Y_old)/2)
+==> !is_blanc(game->board, (X_new+X_old)/2, (Y_new+Y_old)/2) && EMPTY
+return 0;
 
 PION BLANC SANS PRISE
 ---------------------
@@ -83,4 +92,5 @@ Communs +
 
 - déplacement de deux cases ==> Abs(X_new-X_old)==2 //conditions d'égalité entre dX et dY supposé vraie
 - il doit y avoir une pièce noire entre la case de départ et la case d'arrivée
-==> !is_blanc(game->board, (X_new+X_old)/2, (Y_new+Y_old)/2)
+==> is_blanc(game->board, (X_new+X_old)/2, (Y_new+Y_old)/2) && EMPTY
+return 0;
