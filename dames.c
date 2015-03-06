@@ -38,11 +38,18 @@ struct game *load_game(int xsize, int ysize, const int **board, int cur_player)
     f->cur_player = cur_player;
     return f;
 }
+
 void free_game(struct game *game)
 {
-    //spec : free the memory of useless games
+    for (int i=0; i<game->xsize; i++)
+    {
+        free(game->board[i]);
+    }
+    free(game->board);
+    game->board = NULL;
+    // FREE game ! after board
     free(game);
-    game = NULL;
+    game=NULL;
     return;
 }
 
