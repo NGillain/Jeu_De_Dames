@@ -3,7 +3,9 @@
 #include "dames.h"
 
 #define PION_NOIR   0b00000001
+#define DAME_NIORE  0b00000011
 #define PION_BLANC  0b00000101
+#define DAME_BLANCHE 0b00000111
 #define EMPTY       0b00000000
 
 int main(int argc,char *argv[])
@@ -89,7 +91,7 @@ int is_dame(int value) // pas sure que cela fonctionne
     return (((value >> 1 ) << 7) == 0b1);
 }
 
-int is_blanc(int value) // idem
+int is_white(int value) // idem
 {
     //spec : 0 si noir et 1 si blanc
     return ((value >> 2) == 0b1);
@@ -123,7 +125,7 @@ int is_move_seq_valid(const struct game *game, const struct move_seq *seq, const
         int vec_Y = (ynew-yold)/abs(ynew-yold);
         for(int a=1; a<=(xnew-xold); a++)
         {
-            if(is_blanc(game->board[xold][yold]) == is_blanc(game->board[xold+a*vec_X][yold+a*vec_Y])) //Des qu'il y a un pion de la même couleur
+            if(is_white(game->board[xold][yold]) == is_white(game->board[xold+a*vec_X][yold+a*vec_Y])) //Des qu'il y a un pion de la même couleur
             {
                 return 0;
             }
@@ -131,7 +133,7 @@ int is_move_seq_valid(const struct game *game, const struct move_seq *seq, const
         int temp=0;
         for(int b=1; b<=(xnew-xold); b++)
         {
-            if(is_blanc(game->board[xold][yold]) != is_blanc(game->board[xold+b*vec_X][yold+b*vec_Y]))
+            if(is_white(game->board[xold][yold]) != is_white(game->board[xold+b*vec_X][yold+b*vec_Y]))
             {
                 temp++;
             }
@@ -154,7 +156,7 @@ int is_move_seq_valid(const struct game *game, const struct move_seq *seq, const
         {
             return 0;
         }
-        if (is_blanc(game->board[xold][yold]))
+        if (is_white(game->board[xold][yold]))
         {
             if ((yold-ynew) < 0) // les blanc bouge vers le haut, vers y=0
             {
@@ -267,7 +269,7 @@ void print_board(const struct game *game)
             {
                 printf("|   ");
             }
-            else if (is_blanc(current_piece))
+            else if (is_white(current_piece))
             {
                 if (is_dame(current_piece))
                 {
