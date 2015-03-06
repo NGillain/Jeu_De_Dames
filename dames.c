@@ -79,7 +79,7 @@ int apply_moves(struct game *game, const struct move *moves)
 int is_dame(int value) // pas sure que cela fonctionne
 {
     //spec : 0 si pion et 1 si dame
-    return ((value >> 1 ) << 7) == 0b1);
+    return (((value >> 1 ) << 7) == 0b1);
 }
 
 int is_blanc(int value) // idem
@@ -98,10 +98,10 @@ int is_move_seq_valid(const struct game *game, const struct move_seq *seq, const
             return 0;
         }
     }
-    int xold = seq->c_old->x;
-    int yold = seq->c_old->y;
-    int xnew = seq->c_new->x;
-    int ynew = seq->c_new->y;
+    int xold = seq->c_old.x;
+    int yold = seq->c_old.y;
+    int xnew = seq->c_new.x;
+    int ynew = seq->c_new.y;
     if (game->board[xnew][ynew] != EMPTY || abs(xold-xnew) != abs(yold-ynew))
     {
         return 0; // case ou on veut aller non vide ou un mouvement de déplacement non valide
@@ -114,7 +114,7 @@ int is_move_seq_valid(const struct game *game, const struct move_seq *seq, const
     {
         int vec_X = (xnew-xold)/abs(xnew-xold);
         int vec_Y = (ynew-yold)/abs(ynew-yold);
-        for(int a=1; a=<(xnew-xold); a++)
+        for(int a=1; a<=(xnew-xold); a++)
         {
             if(is_blanc(game->board[xold][yold]) == is_blanc(game->board[xold+a*vec_X][yold+a*vec_Y])) //Des qu'il y a un pion de la même couleur
             {
@@ -122,9 +122,9 @@ int is_move_seq_valid(const struct game *game, const struct move_seq *seq, const
             }
         }
         int temp=0;
-        for(int b=1; b=<(xnew-xold); b++)
+        for(int b=1; b<=(xnew-xold); b++)
         {
-            if(is_blanc(game->board[xold][yold]) != is_blanc(game->board[xold+a*vec_X][yold+a*vec_Y]))
+            if(is_blanc(game->board[xold][yold]) != is_blanc(game->board[xold+b*vec_X][yold+b*vec_Y]))
             {
                 temp++;
             }
@@ -153,7 +153,7 @@ int is_move_seq_valid(const struct game *game, const struct move_seq *seq, const
             {
                 return 0;
             }
-            else if (abs(xold-xnew) = 2 && is_blanc(game->board[xold+(xnew-xold)/2][yold+(ynew-yold)/2])) // check si il y a un pion sur la casse ou le pion est passé au dessus
+            else if (abs(xold-xnew) == 2 && is_blanc(game->board[xold+(xnew-xold)/2][yold+(ynew-yold)/2])) // check si il y a un pion sur la casse ou le pion est passé au dessus
             {
                 return 0;
             }
@@ -168,7 +168,7 @@ int is_move_seq_valid(const struct game *game, const struct move_seq *seq, const
             {
                 return 0;
             }
-            if (abs(xold-xnew) = 2 && !is_blanc(game->board[xold+(xnew-xold)/2][yold+(ynew-yold)/2]))
+            if (abs(xold-xnew) == 2 && !is_blanc(game->board[xold+(xnew-xold)/2][yold+(ynew-yold)/2]))
             {
                 return 0;
             }
