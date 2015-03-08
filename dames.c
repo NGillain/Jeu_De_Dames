@@ -216,11 +216,11 @@ void create_board(int **board, int xsize, int ysize)
     int lines_to_fill = 0;
     if ((ysize % 2) == 0)
     {
-        int lines_to_fill = (ysize-2)/2;
+        lines_to_fill = (ysize-2)/2;
     }
     else
     {
-        int lines_to_fill = (ysize-1)/2; // let at least an empty line to play
+        lines_to_fill = (ysize-1)/2; // let at least an empty line to play
     }
     if(lines_to_fill>4)
     {
