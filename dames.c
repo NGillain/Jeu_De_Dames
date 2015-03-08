@@ -121,8 +121,8 @@ int is_move_seq_valid(const struct game *game, const struct move_seq *seq, const
     }
     if (is_dame(game->board[xold][yold]))   // on à une dame qui bouge
     {
-        int vec_X = (xnew-xold)/abs(xnew-xold);
-        int vec_Y = (ynew-yold)/abs(ynew-yold);
+        int vec_X = (xnew-xold)/abs(xnew-xold); //vecteur unitaire du déplacement du pion/dame en x
+        int vec_Y = (ynew-yold)/abs(ynew-yold); //vecteur unitaire du déplacement du pion/dame en y
         for(int a=1; a<=(xnew-xold); a++)
         {
             if(is_white(game->board[xold][yold]) == is_white(game->board[xold+a*vec_X][yold+a*vec_Y])) //Des qu'il y a un pion de la même couleur
@@ -193,18 +193,23 @@ int is_move_seq_valid(const struct game *game, const struct move_seq *seq, const
 int undo_moves(struct game *game, int n)
 {
     //spec : get n moves backwards by deleting n nodes
-    if(game->moves == NULL)
-    {
-        return(EXIT_FAILURE); //si pas d'éléments, nous ne savons rien retirer
+    for(int a=0, a<n, a++){
+        if(game->moves == NULL)
+        {
+            return(EXIT_FAILURE); //si pas d'éléments, nous ne savons rien retirer
+        }
+        struct move *iter = (struct move *) (malloc(sizeof(struct move)));
+        iter = game->moves; //pas sur de la validité de cette ligne
+        while(*(iter->next).next != NULL)
+        {
+            iter=iter->next;
+        }
+        iter.next=NULL;
+        free(iter);
     }
-    struct move *iter = (struct move *) (malloc(sizeof(struct move)));
-    iter = game->moves; //pas sur de la validité de cette ligne
-    while(*(iter->next).next != NULL)
-    {
-        iter=iter->next;
+    if(n%2==1){
+       game->cur_player = !game->cur_player; //changement de joueur si nombre de coups annulés impairs
     }
-    iter.next=NULL;
-    free(iter);
 }
 
 
