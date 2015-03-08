@@ -2,11 +2,11 @@
 #include <stdlib.h>
 #include "dames.h"
 
-#define PION_NOIR   0b00000001
-#define DAME_NIORE  0b00000011
-#define PION_BLANC  0b00000101
+#define PION_NOIR    0b00000001
+#define DAME_NOIRE   0b00000011
+#define PION_BLANC   0b00000101
 #define DAME_BLANCHE 0b00000111
-#define EMPTY       0b00000000
+#define EMPTY        0b00000000
 
 int main(int argc,char *argv[])
 {
@@ -24,7 +24,7 @@ struct game *new_game(int xsize, int ysize)
     }
     Newgame->xsize = xsize;
     Newgame->ysize = ysize;
-    Newgame->cur_player = PLAYER_WHITE; // jouer blanc commance toujours
+    Newgame->cur_player = PLAYER_WHITE; // jouer blanc commence toujours
     Newgame->moves = NULL; // Null car pas de move au debut
     int **board = (int **) malloc(ysize*sizeof(int*));
     //fill board
@@ -57,32 +57,22 @@ void free_game(struct game *game)
 
 int apply_moves(struct game *game, const struct move *moves)
 {
-    //spec : apply a move by adding it to the chained list
+    //spec : apply a move by adding it to the chained list and set the current player to the oppenent
     // the move is supposed to be legal
-    struct move_seq *mvseq = moves->seq;
+    struct move_seq *mvseq = (struct move_seq *) malloc(sizeof(move_seq *)); //malloc to keep the pointer on the heap
+    if(mvseq==NULL){
+        return EXIT_FAILURE; //no more space for pointer
+    }
+    mvseq = moves->seq; // verifie si la synthaxe est correcte.
     while (mvseq->next != NULL)
     {
-        //int ans = is_move_seq_valid(game, mvseq, prev, taken coordinates);
-        int ans = 0;
-        if (ans == 0)
-        {
-            return -1; // error, movement not permitted
-
-        }
-        // gestion of illegal move is done anywhere else
-        if (ans == 1)
-        {
-            // movement permit
-            // Set value board[c_old] to board[c_new]
-        }
-        else
-        {
-            // movement permit et capture
-            // Set value board[c_old+1] to board[c_new+1]
-        }
-        // save move in Move from game
+        mvseq=mvseq->next;
     }
-    // when finished, set cur_player to next one
+    mvseq->next = moves; //add the move
+    game->cur_player = !game->cur_player; //other player's turn
+    free(mvseq);
+    // il faut encore changer les coordonnées
+    return EXIT_SUCCESS;
 }
 
 int is_dame(int value) // pas sure que cela fonctionne
@@ -100,9 +90,13 @@ int is_white(int value) // idem
 int is_move_seq_valid(const struct game *game, const struct move_seq *seq, const struct move_seq *prev, struct coord *taken)
 {
     //spec : check ONLY IF one single sequence is valid
-    if (prev != NULL)   //si prev != NULL check prev->c_
+    if(game->cur_player!=is_white(game->board[seq->c_old.x][seq->c_old.y]))
     {
-        if ((prev->c_new) != (seq->c_old))
+        return 0; // if the piece and the player have different colors ==> move is illegal
+    }
+    if (prev != NULL)   //si prev != NULL check prev->c
+    {
+        if ((prev->c_new) != (seq->c_old)) //if the new position don't begin at the end position of the previous move ==> move is illegal
         {
             return 0;
         }
