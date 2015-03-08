@@ -59,18 +59,18 @@ int apply_moves(struct game *game, const struct move *moves)
 {
     //spec : apply a move by adding it to the chained list and set the current player to the oppenent
     // the move is supposed to be legal
-    struct move_seq *mvseq = (struct move_seq *) malloc(sizeof(move_seq *)); //malloc to keep the pointer on the heap
-    if(mvseq==NULL){
+    struct move *iter = (struct move *) malloc(sizeof(move *)); //malloc to keep the pointer on the heap
+    if(iter==NULL){
         return EXIT_FAILURE; //no more space for pointer
     }
-    mvseq = moves->seq; // verifie si la synthaxe est correcte.
-    while (mvseq->next != NULL)
+    iter = game->moves; // verifie si la synthaxe est correcte.
+    while (iter->next != NULL)
     {
-        mvseq=mvseq->next;
+        iter=iter->next;
     }
-    mvseq->next = moves; //add the move
+    iter->next = *moves; //add the move
     game->cur_player = !game->cur_player; //other player's turn
-    free(mvseq);
+    free(iter);
     // il faut encore changer les coordonnées
     return EXIT_SUCCESS;
 }
@@ -78,13 +78,13 @@ int apply_moves(struct game *game, const struct move *moves)
 int is_dame(int value) // pas sure que cela fonctionne
 {
     //spec : 0 si pion et 1 si dame
-    return (((value >> 1 ) << 7) == 0b1);
+    return ((value & 0b00000010) && (value & 0b00000001)); // plus simple
 }
 
 int is_white(int value) // idem
 {
     //spec : 0 si noir et 1 si blanc
-    return ((value >> 2) == 0b1);
+    return ((value & 0b00000100) && (value & 0b00000001)); //plus simple
 }
 
 int is_move_seq_valid(const struct game *game, const struct move_seq *seq, const struct move_seq *prev, struct coord *taken)
@@ -94,7 +94,7 @@ int is_move_seq_valid(const struct game *game, const struct move_seq *seq, const
     {
         return 0; // if the piece and the player have different colors ==> move is illegal
     }
-    if (prev != NULL)   //si prev != NULL check prev->c
+    if (prev != NULL)  //si prev != NULL check prev->c
     {
         if ((prev->c_new) != (seq->c_old)) //if the new position don't begin at the end position of the previous move ==> move is illegal
         {
@@ -104,10 +104,11 @@ int is_move_seq_valid(const struct game *game, const struct move_seq *seq, const
     int xold = seq->c_old.x;
     int yold = seq->c_old.y;
     int xnew = seq->c_new.x;
-    int ynew = seq->c_new.y;
-    if (game->board[xnew][ynew] != EMPTY || abs(xold-xnew) != abs(yold-ynew))
+    int ynew = seq->c_new.y
+    int c = is_white(game->board[xold][yold]);
+    if (game->board[xold][yold] == EMPTY || game->board[xnew][ynew] != EMPTY || abs(xold-xnew) != abs(yold-ynew))
     {
-        return 0; // case ou on veut aller non vide ou un mouvement de déplacement non valide
+        return 0; // case ou on veut aller non vide ou un mouvement de déplacement non diagonal ou encore une case vide
     }
     if (0>xnew || xnew>game->xsize || 0>ynew || ynew>game->ysize)
     {
@@ -117,9 +118,9 @@ int is_move_seq_valid(const struct game *game, const struct move_seq *seq, const
     {
         int vec_X = (xnew-xold)/abs(xnew-xold); //vecteur unitaire du déplacement du pion/dame en x
         int vec_Y = (ynew-yold)/abs(ynew-yold); //vecteur unitaire du déplacement du pion/dame en y
-        for(int a=1; a<=(xnew-xold); a++)
+        for(int a=1; a<=abs(xnew-xold); a++)
         {
-            if(is_white(game->board[xold][yold]) == is_white(game->board[xold+a*vec_X][yold+a*vec_Y])) //Des qu'il y a un pion de la même couleur
+            if(c == is_white(game->board[xold+a*vec_X][yold+a*vec_Y])) //Des qu'il y a un pion de la même couleur
             {
                 return 0;
             }
@@ -127,62 +128,67 @@ int is_move_seq_valid(const struct game *game, const struct move_seq *seq, const
         int temp=0;
         for(int b=1; b<=(xnew-xold); b++)
         {
-            if(is_white(game->board[xold][yold]) != is_white(game->board[xold+b*vec_X][yold+b*vec_Y]))
+            if(c != is_white(game->board[xold+b*vec_X][yold+b*vec_Y]))
             {
-                temp++;
+                temp++; // on a trouvé un pion de la couleur opposée
             }
-            if(temp>1){
+            if(temp>1) // Si plus d'un pion de couleur opposée, illegal move
+            { 
                 return 0;
             }
         }
+        if(seq->next == NULL && temp==1 && game->board[xnew+(xold-xnew)/(abs(xold-xnew))][ynew+(yold-ynew)/(abs(yold-ynew))] == EMPTY))
+        {
+            return 0; // si la dame finit son move et qu'elle se positionne qqpart où il n'y pas de pions avant
+        }
+        else if(temp==0)
+        {
+            return 1; // si rien le mvt est valide
+        }
+        else
+        {
+            return 2; //sinon c'est que le mvt est valide et la dame prend un pion
+        }
     }
-    //    if (seq->next == NULL && game->board[xnew+(xold-xnew)/(abs(xold-xnew))][ynew+(yold-ynew)/(abs(yold-ynew))] == EMPTY)//
-    //    {
-    //        return 0; //faux que se passe-t-il si la dame souhaite aller quelque part sans prise de pion pour son dernier déplacement? ==> return 0
-    //    }
-    //    else
-    //    {
-    //        return 2; // capture du dernier pion par la dame
-    //    }
     else   // on a un pion qui bouge
     {
         if (abs(xold-xnew) > 2) // pion ne bouge pas de plus de 2 casses
         {
             return 0;
         }
-        if (is_white(game->board[xold][yold]))
+        if (c) // si la piece est blanche
         {
+            if (abs(xold-xnew) == 2 && !is_white(game->board[xold+(xnew-xold)/2][yold+(ynew-yold)/2] && game->board[xold+(xnew-xold)/2][yold+(ynew-yold)/2] != EMPTY) // check si il y a un pion sur la casse ou le pion est passé au dessus
+            {
+                return 2;// capture d'un noir par les blanc
+            }
             if ((yold-ynew) < 0) // les blanc bouge vers le haut, vers y=0
             {
                 return 0;
             }
-            else if (abs(xold-xnew) == 2 && is_blanc(game->board[xold+(xnew-xold)/2][yold+(ynew-yold)/2])) // check si il y a un pion sur la casse ou le pion est passé au dessus
-            {
-                return 0;
-            }
             else
             {
-                return 2; // capture d'un noir par les blanc
+                return 0; 
             }
         }
-        else
+        else //si elle est noire
         {
+            if (abs(xold-xnew) == 2 && is_white(game->board[xold+(xnew-xold)/2][yold+(ynew-yold)/2]))
+            {
+                return 2;
+            }
             if ((yold-ynew) > 0) // les noirs bouge vers le bas, vers y=ysize
             {
                 return 0;
             }
-            if (abs(xold-xnew) == 2 && !is_blanc(game->board[xold+(xnew-xold)/2][yold+(ynew-yold)/2]))
-            {
-                return 0;
-            }
             else
             {
-                return 2; // capture d'un blanc par les noir
+                return 0; // capture d'un blanc par les noir
             }
         }
     }
 
-    return 1; // OK, deplacement possible
+    return 1; // OK, deplacement possible sans capture
 }
 int undo_moves(struct game *game, int n)
 {
@@ -194,6 +200,10 @@ int undo_moves(struct game *game, int n)
         }
         struct move *iter = (struct move *) (malloc(sizeof(struct move)));
         iter = game->moves; //pas sur de la validité de cette ligne
+        if(iter == NULL)
+        {
+            return(EXIT_FAILURE); //pas d'espace
+        }
         while(*(iter->next).next != NULL)
         {
             iter=iter->next;
