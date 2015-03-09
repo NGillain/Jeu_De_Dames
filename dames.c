@@ -59,8 +59,9 @@ int apply_moves(struct game *game, const struct move *moves)
 {
     //spec : apply a move by adding it to the chained list and set the current player to the oppenent
     // the move is supposed to be legal
-    struct move *iter = (struct move *) malloc(sizeof(move)); //malloc to keep the pointer on the heap
-    if(iter==NULL){
+    struct move *iter = (struct move *) malloc(sizeof(struct move *)); //malloc to keep the pointer on the heap
+    if (iter==NULL)
+    {
         return EXIT_FAILURE; //no more space for pointer
     }
     iter = game->moves; // verifie si la synthaxe est correcte.
@@ -71,8 +72,36 @@ int apply_moves(struct game *game, const struct move *moves)
     iter->next = moves; //add the move
     game->cur_player = !game->cur_player; //other player's turn
     free(iter);
-    // il faut encore changer les coordonnées
-    return EXIT_SUCCESS;
+
+    struct move_seq *iter_seq = (struct move_seq*) malloc(sizeof(struct move_seq *));
+    if (iter_seq == NULL) {
+        return -1;
+    }
+    iter_seq = game->moves->seq;
+    struct coord taken;
+    struct move_seq *prev = NULL;
+    while (iter_seq != NULL)
+    {
+        int valid = is_move_seq_valid(game,iter_seq,prev,&taken);
+        int piece = iter->seq->old_orig;
+        if (valid == 0 ) {
+            return -1; // ERREUR du mouvement ou autre
+        } else {
+            game->board[iter_seq->c_new.x][iter_seq->c_new.y] = piece; // move old pawn position to new
+            game->board[iter_seq->c_old.x][iter_seq->c_old.y] = EMPTY;
+            if ((is_white(piece) && iter_seq->c_new.y == 0) || (is_black(piece) && iter_seq->c_new.y == (game->ysize-1))) {
+                game->board[iter_seq->c_new.x][iter_seq->c_new.y] = upgrade(game->board[iter_seq->c_new.x][iter_seq->c_new.y]);
+            }
+            if (valid == 2) {
+                //capture
+                game->board[iter_seq->piece_taken.x][iter_seq->piece_taken.y] = EMPTY;
+            }
+        }
+        prev = iter_seq;
+        iter = iter->next;
+    }
+    free(iter_seq);
+    return 0;
 }
 
 int is_dame(int value) // pas sure que cela fonctionne
