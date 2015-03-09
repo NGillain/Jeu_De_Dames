@@ -59,7 +59,7 @@ int apply_moves(struct game *game, const struct move *moves)
 {
     //spec : apply a move by adding it to the chained list and set the current player to the oppenent
     // the move is supposed to be legal
-    struct move *iter = (struct move *) malloc(sizeof(move *)); //malloc to keep the pointer on the heap
+    struct move *iter = (struct move *) malloc(sizeof(move)); //malloc to keep the pointer on the heap
     if(iter==NULL){
         return EXIT_FAILURE; //no more space for pointer
     }
@@ -68,7 +68,7 @@ int apply_moves(struct game *game, const struct move *moves)
     {
         iter=iter->next;
     }
-    iter->next = *moves; //add the move
+    iter->next = moves; //add the move
     game->cur_player = !game->cur_player; //other player's turn
     free(iter);
     // il faut encore changer les coordonnées
@@ -166,10 +166,6 @@ int is_move_seq_valid(const struct game *game, const struct move_seq *seq, const
             {
                 return 0;
             }
-            else
-            {
-                return 0; 
-            }
         }
         else //si elle est noire
         {
@@ -180,10 +176,6 @@ int is_move_seq_valid(const struct game *game, const struct move_seq *seq, const
             if ((yold-ynew) > 0) // les noirs bouge vers le bas, vers y=ysize
             {
                 return 0;
-            }
-            else
-            {
-                return 0; // capture d'un blanc par les noir
             }
         }
     }
