@@ -1,32 +1,30 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <math.h> //compilé avec -lm
+#include <math.h> //must be compiled with -lm for the linker
 #include "dames.h"
 
 #define PION_NOIR   0b00000001
 #define PION_BLANC  0b00000101
 #define EMPTY       0b00000000
 
-int nb_white = 0;
-int nb_black = 0;
-int moves_done = 0;
-
+int nb_white;
+int nb_black;
+int moves_done;
+int simple_moves;
 
 struct game *new_game(int xsize, int ysize)
 {
-    //spec : create a new struct representing a game
+    //spec : create a new struct representing a game and return it
     struct game *Newgame = (struct game *) (malloc(sizeof(struct game)));
     if (Newgame == NULL)
     {
-        return NULL;
+        return NULL; //run out of memory
     }
     Newgame->xsize = xsize;
     Newgame->ysize = ysize;
-    nb_black = 10; // adapt to board size
-    nb_white = 10;
-    Newgame->cur_player = PLAYER_WHITE; // jouer blanc commance toujours
+    Newgame->cur_player = PLAYER_WHITE; // the white pawns always begin
     Newgame->moves = NULL;
-    Newgame->board = create_board(xsize,ysize);
+    Newgame->board = create_board(xsize,ysize); //init a new board
     if (Newgame->board == NULL)
     {
         return NULL;
@@ -37,7 +35,7 @@ struct game *new_game(int xsize, int ysize)
 struct game *load_game(int xsize, int ysize, const int **board, int cur_player)
 {
     //spec : load a game by initialization
-    struct game *f = new_game(xsize,ysize);
+    struct game *f = new_game(xsize,ysize); //malloc is in new_game
     f->board = board;
     f->cur_player = cur_player;
     return f;
@@ -45,6 +43,7 @@ struct game *load_game(int xsize, int ysize, const int **board, int cur_player)
 
 void free_game(struct game *game)
 {
+	//spec : free all ressources used by a game structure
     for (int i=0; i<game->xsize; i++)
     {
         free(game->board[i]);
@@ -59,68 +58,99 @@ void free_game(struct game *game)
 
 int apply_moves(struct game *game, const struct move *moves)
 {
-    //spec : apply a move by adding it to the chained list and set the current player to the oppenent
+    //spec : apply a move by adding it to the chained list, updating the game board and setting the current player to the opposite one
     struct move *iter_move = moves;
     while (iter_move != NULL)
     {
-        struct move_seq *iter_seq;
-        iter_seq = iter_move->seq;
+        struct move_seq *iter_seq; //iterator for move_seq
+        iter_seq = iter_move->seq; //init of iter at the begining of the move
         struct coord taken;
-        struct move_seq *prev = NULL;
+        struct move_seq *prev = NULL; //hold the location of the previous move_seq
         while (iter_seq != NULL)
         {
             int valid = is_move_seq_valid(game,iter_seq,prev,&taken);
             int piece = game->board[iter_seq->c_old.x][iter_seq->c_old.y];
-            if (valid == 0 )
+            if (valid == 0)
             {
-                return -1; // ERREUR du mouvement ou autre
+                return -1; // invalid movement or other error
             }
             else
             {
                 game->board[iter_seq->c_new.x][iter_seq->c_new.y] = piece; // move old pawn position to new
                 game->board[iter_seq->c_old.x][iter_seq->c_old.y] = EMPTY;
-                if ((is_white(piece) && iter_seq->c_new.y == 0) || (is_black(piece) && iter_seq->c_new.y == (game->ysize-1)))
-                {
-                    game->board[iter_seq->c_new.x][iter_seq->c_new.y] = upgrade(game->board[iter_seq->c_new.x][iter_seq->c_new.y]);
-                }
                 if (valid == 2)
                 {
-                    //capture
-                    game->board[iter_seq->piece_taken.x][iter_seq->piece_taken.y] = EMPTY;
+                    iter_seq->piece_value = game->board[taken.x][taken.y]; //update tne taken piece value
+                    iter_seq->piece_taken.x = taken.x; //update the taken coordinates
+                    iter_seq->piece_taken.y = taken.y;
+                    iter_seq->old_orig = piece;
+                    game->board[taken.x][taken.y] = EMPTY;
+                    if(is_white(game->board[taken.x][taken.y]))
+                    {
+						nb_white--; //update the remaining white pieces
+					}
+					else if(is_black(game->board[taken.x][taken.y]))
+					{
+						nb_black--; //update the remaining black pieces
+					}
                 }
-                prev = iter_seq;
-                iter_seq = iter_seq->next;
-                return 0;
+                if (is_white(piece) && (iter_seq->c_new.y == 0) )
+                {
+                    game->board[iter_seq->c_new.x][iter_seq->c_new.y] = upgrade(piece); //upgrade a white man into a white king
+
+                }
+                if (is_black(piece) && (iter_seq->c_new.y == (game->ysize-1))) {
+                    game->board[iter_seq->c_new.x][iter_seq->c_new.y] = upgrade(piece); //upgrade a black man into a black king
+               }
             }
+
+            prev = iter_seq;
+            iter_seq = iter_seq->next; //next!
         }
         game->cur_player = !game->cur_player; //other player's turn
         if (nb_black == 0)
         {
             game->cur_player = PLAYER_WHITE;
-            return 1; // blanc gagne
+            return 1; // white player won
         }
         if (nb_white == 0)
         {
             game->cur_player = PLAYER_BLACK;
-            return 1; // noir gagne
+            return 1; // black player won
         }
+        iter_move = iter_move->next;
     }
-    // attention si capture final dans seq, cette historique ne sera pas enregistré car returnn avant !!!!!!!!!!!!!!!!!!!!!!!!
+    // attention si capture final dans seq, cette historique ne sera pas enregistré car return avant !!!!!!!!!!!!!!!!!!!!!!!!
     struct move *iter_move_game = game->moves;
-    struct move *iter_move_game_prev = NULL;
     while (iter_move_game != NULL)
     {
-        iter_move_game_prev = iter_move_game;
         iter_move_game = iter_move_game->next;
     }
-    iter_move_game_prev->next = moves;
+    iter_move_game = moves;
     return 0;
 }
 
-void reverse(struct move_seq *head_ref)
+void reverse_move(struct move **head)
 {
+	//spec : reverse the move linked list order
+    struct move *prev = NULL;
+    struct move *current = head;
+    struct move *next;
+    while (current != NULL)
+    {
+        next  = current->next;
+        current->next = prev;
+        prev = current;
+        current = next;
+    }
+    *head = prev;
+}
+
+void reverse_seq(struct move_seq **head)
+{
+	//spec : remove the seq linked list order
     struct move_seq *prev = NULL;
-    struct move_seq *current = head_ref;
+    struct move_seq *current = head;
     struct move_seq *next;
     while (current != NULL)
     {
@@ -129,137 +159,169 @@ void reverse(struct move_seq *head_ref)
         prev = current;
         current = next;
     }
-    head_ref = prev;
+    *head = prev;
 }
 
 int upgrade(int value)
 {
+	//upgrade a man into a king
     return (value | 0b00000010);
 }
 
-int is_dame(int value) // pas sure que cela fonctionne
+int is_dame(int value)
 {
-    //spec : 0 si pion et 1 si dame
-    return (((value >> 1 ) << 7) == 0b10000000);
+    //spec : 0 if man or EMPTY and 1 if king
+    return (((value << 6 ) >> 7) & 0b00000001);
 }
 
 int is_white(int value) // idem
 {
-    //spec : 0 si noir et 1 si blanc
-    return ((value >> 2) == 0b00000001);
+    //spec : 0 if black or EMPTY and 1 if white
+    return ( ((value >> 2) & 0b00000001) && (value != EMPTY));
 }
 
 int is_black(int value)
-{
-    return ((value >> 2) == 0b00000000);
+{   //spec : 0 if white or EMPTY and 1 if black
+    return ( ((value >> 2) ^ 0b00000001) && (value != EMPTY));
 }
 
 int is_move_seq_valid(const struct game *game, const struct move_seq *seq, const struct move_seq *prev, struct coord *taken)
 {
     //spec : check ONLY IF one single sequence is valid
-    if ((game->cur_player ) != is_white(game->board[seq->c_old.x][seq->c_old.y]))
+    if ( (game->cur_player) != is_white(game->board[seq->c_old.x][seq->c_old.y]))
     {
         return 0; // if the piece and the player have different colors ==> move is illegal
     }
-    if (prev != NULL)  //si prev != NULL check prev->c
+    int xold = seq->c_old.x;
+    int yold = seq->c_old.y;
+    int xnew = seq->c_new.x;
+    int ynew = seq->c_new.y;
+    if(abs(xold-xnew) != abs(yold-ynew))
+    {
+		return 0; //if nondiagonal displacement ==> move illegal
+	}
+    if (prev != NULL)  //if there is no previous move
     {
         if ((prev->c_new.x) != (seq->c_old.x)) //if the new position don't begin at the end position of the previous move ==> move is illegal
         {
             return 0;
         }
     }
-    int xold = seq->c_old.x;
-    int yold = seq->c_old.y;
-    int xnew = seq->c_new.x;
-    int ynew = seq->c_new.y;
     int c = is_white(game->board[xold][yold]);
-    if (game->board[xold][yold] == EMPTY || game->board[xnew][ynew] != EMPTY || abs(xold-xnew) != abs(yold-ynew))
+    if (game->board[xold][yold] == EMPTY || game->board[xnew][ynew] != EMPTY)
     {
-        return 0; // case ou on veut aller non vide ou un mouvement de déplacement non diagonal ou encore une case vide
+        return 0; // case où on veut aller non vide ou une case vide
     }
     if (0>xnew || xnew>(game->xsize) || 0>ynew || ynew>(game->ysize))
     {
         return 0; // illegal move : OutOfBound
     }
-    if (is_dame(game->board[xold][yold]))   // on à une dame qui bouge
+    int vec_X = (xnew-xold)/abs(xnew-xold); //vecteur unitaire du déplacement du pion/dame en x
+    int vec_Y = (ynew-yold)/abs(ynew-yold); //vecteur unitaire du déplacement du pion/dame en y
+    if (is_dame(game->board[xold][yold]))   // king moving
     {
-        int vec_X = (xnew-xold)/abs(xnew-xold); //vecteur unitaire du déplacement du pion/dame en x
-        int vec_Y = (ynew-yold)/abs(ynew-yold); //vecteur unitaire du déplacement du pion/dame en y
-        for(int a=1; a<=abs(xnew-xold); a++)
+        for(int a=1; a<abs(xnew-xold); a++)
         {
-            if(c == is_white(game->board[xold+a*vec_X][yold+a*vec_Y])) //Des qu'il y a un pion de la même couleur
+            if(c == is_white(game->board[xold+a*vec_X][yold+a*vec_Y]) && game->board[xold+a*vec_X][yold+a*vec_Y] != EMPTY) //Des qu'il y a un pion de la même couleur
             {
                 return 0;
             }
         }
-        int temp=0;
-        for(int b=1; b<=(xnew-xold); b++)
+        int temp=0; //keep track of the number of opposite's color pawns
+        struct coord t;
+        for(int b=1; b<(xnew-xold); b++)
         {
             if(c != is_white(game->board[xold+b*vec_X][yold+b*vec_Y]))
             {
-                temp++; // on a trouvé un pion de la couleur opposée
+                temp++; // we found an opposite's color pawn
+                t.x = xold+b*vec_X;
+                t.y = yold+b*vec_Y;
             }
-            if(temp>1) // Si plus d'un pion de couleur opposée, illegal move
+            if(temp>1) // more than one of these means illegal move
             {
                 return 0;
             }
         }
-        if (seq->next == NULL && temp==1 && game->board[xnew+(xold-xnew)/(abs(xold-xnew))][ynew+(yold-ynew)/(abs(yold-ynew))] == EMPTY)
+        if(temp==0)
         {
-            return 0; // si la dame finit son move et qu'elle se positionne qqpart où il n'y pas de pions avant
-        }
-        else if(temp==0)
-        {
+            printf("Moving \n");
             return 1; // si rien le mvt est valide
         }
+        //else if (seq->next == NULL && game->board[xnew+(xold-xnew)/(abs(xold-xnew))][ynew+(yold-ynew)/(abs(yold-ynew))] == EMPTY)
+        //{
+            //return 0; // si la dame finit son move et qu'elle se positionne qqpart où il n'y pas de pions avant
+        //}
         else
         {
+            taken->x = t.x;
+            taken->y = t.y;
             return 2; //sinon c'est que le mvt est valide et la dame prend un pion
         }
     }
-    else   // on a un pion qui bouge
+    else   // a man is moving
     {
-        if (abs(xold-xnew) > 2) // pion ne bouge pas de plus de 2 casses
+        if (abs(xold-xnew) > 2) // men don't move further than 2
         {
             return 0;
         }
-        if (c) // si la piece est blanche
+        if (c) // white men
         {
-            if (abs(xold-xnew) == 2 && !is_white(game->board[xold+(xnew-xold)/2][yold+(ynew-yold)/2]) && game->board[xold+(xnew-xold)/2][yold+(ynew-yold)/2] != EMPTY) // check si il y a un pion sur la casse ou le pion est passé au dessus
+			printf("it is white\n");
+            if (abs(xold-xnew) == 2) // if the man goes two step further
             {
-                return 2;// capture d'un noir par les blanc
+				printf("it moves 2 steps\n");
+				if(is_black(game->board[xold+vec_X][yold+vec_Y]))//check if there is an opposite color pawn
+				{
+					printf("la case entre est %d (0 si blanc et 1 si noir)\n", is_black(game->board[xold+(xnew-xold)/2][yold+(ynew-yold)/2]));
+					taken->x = xold+vec_X;
+					taken->y = yold+vec_Y;
+					return 2;// if so, a white man took a black man
+				}
+				else
+				{
+					return 0; //else it is a trap
+				}
             }
-            if ((yold-ynew) < 0) // les blanc bouge vers le haut, vers y=0
+            if ((yold-ynew) < 0) // white men must move upward
             {
                 return 0;
             }
         }
-        else //si elle est noire
+        else // black men
         {
-            if (abs(xold-xnew) == 2 && is_white(game->board[xold+(xnew-xold)/2][yold+(ynew-yold)/2]))
+            if (abs(xold-xnew) == 2)
             {
-                return 2;
+				if(is_white(game->board[xold+vec_X][yold+vec_Y]))
+				{
+					taken->x = xold+vec_X;
+					taken->y = yold+vec_Y;
+					return 2;//same as above
+				}
+				else
+				{
+					return 0;
+				}
             }
-            if ((yold-ynew) > 0) // les noirs bouge vers le bas, vers y=ysize
+            if ((yold-ynew) > 0) // black men must move downward
             {
                 return 0;
             }
         }
     }
-
-    return 1; // OK, deplacement possible sans capture
+	printf("rattrapage au filet ==> MAUVAIS!\n ");
+    return 1; // else without taking anything
 }
 
 int undo_moves(struct game *game, int n)
 {
-    reverse(game->moves);
+    reverse_move(game->moves);
     struct move *iter_move = game->moves;
     int undo_done = 0;
     while (iter_move != NULL && undo_done < n)
     {
-        reverse(iter_move->seq);
+        reverse_seq(iter_move->seq);
         struct move_seq *iter_seq = iter_move->seq;
-        while(iter_seq != NULL)   // reset new coordiantes to old and set pawn back if where taken
+        while(iter_seq != NULL)   // reset new coordinates to old ones and set the pawn back if where it was taken
         {
             game->board[iter_seq->c_old.x][iter_seq->c_old.y] = iter_seq->old_orig;
             game->board[iter_seq->c_new.x][iter_seq->c_new.y] = EMPTY;
@@ -275,7 +337,7 @@ int undo_moves(struct game *game, int n)
         game->cur_player = !game->cur_player;
     }
     game->moves = iter_move; // plus besoin car ca se passe dans remove_move
-    reverse(game->moves);
+    reverse_move(game->moves);
     return 0;
 }
 /*  remove_moves
@@ -291,7 +353,7 @@ void remove_moves(struct game *game,int n)
     {
         n = 10000;
     }
-    while ( (iter_move != NULL) && (removed < n))
+    while ( (iter_move != NULL) || (removed < n))
     {
         iter_move_next = iter_move->next;
         remove_move_seq(iter_move);
@@ -334,9 +396,9 @@ int create_board(int xsize, int ysize)
     {
         lines_to_fill = (ysize-1)/2; // let at least an empty line to play
     }
-    if(lines_to_fill>4)
+    if(lines_to_fill>5)
     {
-        lines_to_fill = 4; // max 4 lines with pions
+        lines_to_fill = 5; // max 5 lines with men
     }
     for (int i=0; i<xsize; i++)
     {
@@ -344,11 +406,11 @@ int create_board(int xsize, int ysize)
         for (int j=0; j<ysize; j++)
         {
 
-            if ( ((i+j)%2) == 0)   // si case à remplir et ...
+            if ( ((i+j)%2) == 1)   // si case à remplir et ...
             {
-                if (j<lines_to_fill)   // ... que dans les 4 premières lignes ...
+                if (j<lines_to_fill)   // ... if it in the first lines ...
                 {
-                    board[i][j]=PION_NOIR; // ... c'est un pion noir
+                    board[i][j]=PION_NOIR; // ... it is black
                 }
                 else if (j >= ysize-lines_to_fill)
                 {
@@ -361,17 +423,20 @@ int create_board(int xsize, int ysize)
             }
             else
             {
-                board[i][j]=EMPTY; //sinon vide à coup sure
+                board[i][j]=EMPTY; //surely empty
             }
         }
     }
+    nb_white = round(lines_to_fill*xsize/2); // complex formula for the number of pieces
+    nb_black = nb_white;
     return board;
 }
 
 void print_board(const struct game *game)
 {
 
-    //spec : print on the shell the board
+    //spec : print on the shell the current state of the board
+    printf("  ");
     for (int i=0; i<game->xsize; i++)
     {
         printf(" %3d",i);
@@ -379,7 +444,7 @@ void print_board(const struct game *game)
     printf("\n");
     for (int j=0; j<game->ysize; j++)
     {
-        printf("%d",j);
+        printf("%3d",j);
         for (int i=0; i<game->xsize; i++)
         {
             int current_piece = game->board[i][j];
@@ -415,6 +480,11 @@ void print_board(const struct game *game)
             }
         }
         printf("|\n");
-        printf("--------------------------------------------\n");
+        printf(" ---");
+        for(int a=0; a<game->xsize; a++) //because of resizable board ;)
+        {
+			printf("----");
+		}
+		printf("\n");
     }
 }
