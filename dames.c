@@ -44,6 +44,9 @@ struct game *load_game(int xsize, int ysize, const int **board, int cur_player)
 void free_game(struct game *game)
 {
 	//spec : free all ressources used by a game structure
+    if(game==NULL){
+		return;
+	}
     for (int i=0; i<game->xsize; i++)
     {
         free(game->board[i]);
@@ -244,7 +247,6 @@ int is_move_seq_valid(const struct game *game, const struct move_seq *seq, const
         }
         if(temp==0)
         {
-            printf("Moving \n");
             return 1; // si rien le mvt est valide
         }
         //else if (seq->next == NULL && game->board[xnew+(xold-xnew)/(abs(xold-xnew))][ynew+(yold-ynew)/(abs(yold-ynew))] == EMPTY)
@@ -266,13 +268,10 @@ int is_move_seq_valid(const struct game *game, const struct move_seq *seq, const
         }
         if (c) // white men
         {
-			printf("it is white\n");
             if (abs(xold-xnew) == 2) // if the man goes two step further
             {
-				printf("it moves 2 steps\n");
 				if(is_black(game->board[xold+vec_X][yold+vec_Y]))//check if there is an opposite color pawn
 				{
-					printf("la case entre est %d (0 si blanc et 1 si noir)\n", is_black(game->board[xold+(xnew-xold)/2][yold+(ynew-yold)/2]));
 					taken->x = xold+vec_X;
 					taken->y = yold+vec_Y;
 					return 2;// if so, a white man took a black man
@@ -308,7 +307,6 @@ int is_move_seq_valid(const struct game *game, const struct move_seq *seq, const
             }
         }
     }
-	printf("rattrapage au filet ==> MAUVAIS!\n ");
     return 1; // else without taking anything
 }
 
@@ -353,7 +351,7 @@ void remove_moves(struct game *game,int n)
     {
         n = 10000;
     }
-    while ( (iter_move != NULL) || (removed < n))
+    while ( (iter_move != NULL) && (removed < n))
     {
         iter_move_next = iter_move->next;
         remove_move_seq(iter_move);
@@ -437,15 +435,15 @@ void print_board(const struct game *game)
 
     //spec : print on the shell the current state of the board
     printf("  ");
-    for (int i=0; i<game->xsize; i++)
+    for(int i=0; i<game->xsize; i++)
     {
         printf(" %3d",i);
     }
     printf("\n");
-    for (int j=0; j<game->ysize; j++)
+    for(int j=0; j<game->ysize; j++)
     {
         printf("%3d",j);
-        for (int i=0; i<game->xsize; i++)
+        for(int i=0; i<game->xsize; i++)
         {
             int current_piece = game->board[i][j];
             if (current_piece == EMPTY)
