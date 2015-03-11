@@ -3,111 +3,100 @@
 #include "dames.c"
 
 
-int main(int argc, int *argv[]){
-    begining:
-printf("Bienvenue dans Jeu de Dames V1.0\n");
-printf("Que souhaitez-vous faire?\n");
-printf("Exit(x) / Play(p) / Secret options(s)\n"); // mettre dans secret options la taille du tableau?
-int temp;
-int res;
-res = scanf("%c", &temp); //erreur possible
-if(res!=1 || temp=='x')
+int main(int argc, int *argv[])
 {
-	printf("A bientôt!");
-	\\delay end of game
-	return 0;
-}
-if(temp=='s')
-{
-	//afficher les options
-	goto begining; //occasion d'utiliser un goto
-}
-else
-{
-	int tab_size;
-	printf("Quel est la taille du plateau : ");
-	scanf("%d",&tab_size); //erreur possible
-	struct game * jeu=(struct game *) malloc(sizeof(game));
-	jeu = new_game(tab_size, tab_size);
-	print_board(jeu);
-	while(//le jeu n'est pas gagné par qqun)
-	{
-		printf("C'est au tour du joueur %s\n", ); //je ne trouve pas de moyen simple d'afficher la couleur du joueur
-		struct move play = {NULL,NULL};
-		struct move_seq * iter = play.seq;
-		struct move_seq prev={NULL,NULL,NULL,0b00000001,NULL,0}; //init pour passer dans la boucle
-		while(prev.piece_value!=EMPTY)
+	begining:
+    printf("Welcome to the Great Game of Checkers V3.1.1\n");
+    printf("");
+    printf("What would you like to do?\n");
+    printf("Exit(x) / Play(p) / Options(o)\n"); // mettre dans secret options la taille du tableau?
+    char temp;
+    int res; //useful variable for results of all scanf call
+    res = scanf("%c", &temp);
+    while(res!=1)
+    {
+		printf("You didn't enter a character or a wrong one. Please enter only one character in the list here under according to what you want to do\n");
+		printf("Play(p) / Options(O) / Exit(x)\n");
+		res = scanf("%c", &temp);
+	}
+    if(temp=='x')
+    {
+        printf("See you soon! \n");
+        return 0;
+    }
+    else if(temp=='s')
+    {
+		printf("OPTIONS\n-------\n\n");
+		printf("Nothing for now sry\n");
+		goto begining;
+	}
+	else if(temp=='p')
+	{	
+		int tab_size;
+		printf("What's the size of the game board (max 15 lines, min 4 lines)? ");
+		res = scanf("%d",&tab_size); //erreur possible
+		while(res!=1)
 		{
-			struct move_seq cur_play;
-			do
-			{
-			if(!is_move_seq_valid(jeu, &cur_play, &prev, NULL))
-			{
-				printf("Erreur : votre mouvement n'est pas légal. Veuillez introduire un autre mouvement.\n");
-			}
-			printf("VOTRE MOUVEMENT\n ---------------\n Position de la pièce à bouger(écrit sous la forme (X,Y)): ");
+			printf("You didn't enter a number. Please enter a number of lines between 4 and 15 : ");
+			res = scanf("%c", &tab_size);
+		}
+		if(tab_size > 15)
+		{
+			tab_size=15; // no more than 15 lines
+		}
+		if(tab_size < 4)
+		{
+			tab_size=10; // short boards are so easy I propose you to play on a traditional one :)
+		}
+		struct game *jeu = new_game(tab_size, tab_size);
+		printf("\n");
+		print_board(jeu);
+		printf("\n");
+		printf("Here are some explanations : the horizontal axis is called X and the vertical one Y.\n");
+		printf("Illegal moves will be detected and you'll have an other chance to give it. Please follow carefully the given format!\n");
+		printf("\n");
+		while (nb_black>0 || nb_white>0)
+		{
+			struct move *mv = (struct move *) malloc(sizeof(struct move));
+			struct move_seq *seq = (struct move_seq *) malloc(sizeof(struct move_seq));
+			printf("It is the %d player's turn\n",jeu->cur_player);
+			printf("1(w) is white and 0(b) is black\n");
+			printf("\n");
+			printf("YOUR MOVE :\n -----------\nPosition of the piece to move(written as follow X,Y) : ");
 			int x1;
 			int y1;
-			scanf("(%d,%d)",&x1,&y1); //erreur possible
-			struct coord old_coord = {x1,y1};
-			printf("Nouvelle position de cette pièce(écrit sous la forme (X,Y): ");
-			int x2;
-			int y2;
-			scanf("(%d,%d)",&x2,&y2); //erreur possible
-			struct coord new_coord = {x2,y2};
-			cur_play = {NULL,old_coord,new_coord,0,NULL,game->board[x1][y1]};
+			res = scanf("%d,%d",&x1,&y1);
+			while(res!=2)
+			{
+				printf("The format was wrong. Try again and use the following format X,Y : ");
+				res = scanf("%d,%d",&x1,&y1);
 			}
-			while(!is_move_seq_valid(jeu, &cur_play, &prev, NULL));
-			prev = cur_play; // le mvt en cours devient le précédent
-			*iter = cur_play; // on ajoute la séquence
-			iter=iter.next; // et on avance pour le suivant
+			struct coord old_coord = {x1,y1};
+			printf("valeur ancienne piece : %d\n",jeu->board[x1][y1]);
+			printf("Nouvelle position de cette pièce(écrit sous la forme (X,Y): ");
+			int x2,y2;
+			scanf("%d,%d",&x2,&y2); //erreur possible
+			struct coord new_coord = {x2,y2};
+			seq->c_new = new_coord;
+			seq->c_old = old_coord;
+			seq->old_orig = jeu->board[x1][y1];
+			seq->next = NULL;
+			seq->piece_value = 0b00000000;
+			mv->seq = seq;
+			mv->next = NULL;
+			int result = apply_moves(jeu,mv);
+			if (result == -1)
+			{
+				printf("Your move is incorrect : %d. Try again\n", result);
+			}
+			else
+			{
+				printf("Your move is correct : %d.\n", result);
+			}
+			printf("Here is the game board : \n\n");
+			print_board(jeu);
+			printf("\n");
 		}
-		free(iter); // plus besoin de iter
-		//le move est construit et se trouve dans la variable play
-		apply_moves(jeu,play);
-		print_board(jeu);
+		free_game(jeu);
 	}
-}
-
-    //struct game *Jeu = new_game(10,10);//set up game
-    //print_board(Jeu); // show game
-    //struct coord old = {1,3};
-    //struct coord newC = {2,4};
-    //struct move_seq f ={NULL,old,newC,0,NULL,0};
-    //struct move mv = {NULL,&f};
-    //struct coord ta;
-    //int r =  is_move_seq_valid(Jeu,&f,NULL,&ta);
-    //printf("%d",r);
-    //free_game(Jeu); // stop and free memory from game
-    
-    // check validity of move_seqs in moves
-    //struct move_seq *iter_seq = (struct move_seq*) malloc(sizeof(struct move_seq *));
-    //iter_seq = game->moves->seq;
-    //struct move_seq *prev = (struct move_seq) calloc(sizeof(move_seq));
-    //struct coord taken;
-    //if (taken == NULL) {
-    //    return -1;
-//    }
-    //while (iter_seq != NULL)
-    //{
-        //int valid = is_move_seq_valid(game,iter_seq,prev,taken);
-        //if (valid == 0 ) {
-        //    return -1; // ERREUR du mouvement ou autre
-        //} else if (valid == 2) {
-                //capture
-        //        game->board[iter_seq->c_new.x][iter_seq->c_new.y] = game->board[iter_seq->c_old.x][iter_seq->c_old.y]; // move old pawn position to new
-        //        game->board[iter_seq->c_old.x][iter_seq->c_old.y] = EMPTY;
-        //        game->board[taken.x][taken.y] = EMPTY; // remove taken pawn
-
-
-
-        //} else {
-            // simple deplacement
-        //    game->board[iter_seq->c_new.x][iter_seq->c_new.y] = game->board[iter_seq->c_old.x][iter_seq->c_old.y]; // move old pawn position to new
-        //        game->board[iter_seq->c_old.x][iter_seq->c_old.y] = EMPTY;
-        //    return 1;
-        //}
-        //prev = iter_seq;
-        //iter=iter->next;
-    //}
 }
